@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jessie Math - 三角形冒險挑戰基礎</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary-yellow: #FFB700; 
+            --bg-blue: #f8fbff; 
+            --accent-orange: #FF5722; 
+            --success-green: #4CAF50; 
+            --error-red: #f44336;
+            --jessie-blue: #3F51B5;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg-blue); }
+
+        /* --- Hero & Nav --- */
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 40px; background: white; 
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05); 
+            position: sticky; top: 0; z-index: 100; 
+        }
+        .brand-box { display: flex; align-items: center; }
+        .logo-circle { 
+            width: 50px; height: 50px; background-color: var(--primary-yellow); 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; 
+            margin-right: 15px; overflow: hidden;
+        }
+        .logo-circle img { width: 90%; height: auto; background: transparent; }
+        .brand-text { font-size: 28px; font-weight: bold; color: #2c3e50; }
+
+        nav { display: flex; align-items: center; gap: 10px; }
+        .nav-btn {
+            text-decoration: none; color: #555; font-size: 14px;
+            padding: 8px 15px; border: 1px solid #e0e0e0;
+            border-radius: 25px; display: flex; align-items: center; gap: 5px; transition: 0.3s;
+        }
+        .nav-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .nav-btn.blue-border { border-color: var(--jessie-blue); color: var(--jessie-blue); }
+
+        /* --- Layout --- */
+        #main-wrapper { max-width: 600px; margin: 20px auto; padding: 10px; }
+        .screen { display: none; background: white; border-radius: 25px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; position: relative; }
+        .screen.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #pause-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); z-index: 80; border-radius: 25px;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        #feedback-overlay {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 90; pointer-events: none; text-align: center; width: 100%;
+        }
+        .flash-icon { font-size: 80px; }
+        .flash-text { font-size: 26px; font-weight: bold; margin-top: 10px; }
+
+        /* --- Game Elements --- */
+        .canvas-container { width: 100%; height: 240px; background: #fafafa; border: 2px solid #f0f0f0; border-radius: 20px; margin-bottom: 20px; position: relative; display: flex; justify-content: center; align-items: center; }
+        .stats { display: flex; justify-content: space-around; margin-bottom: 15px; font-weight: bold; font-size: 20px; }
+        .btn { border: none; padding: 12px 20px; border-radius: 12px; font-size: 16px; cursor: pointer; transition: 0.2s; margin: 5px; color: white; font-weight: bold; }
+        .btn-main { background: var(--accent-orange); width: 85%; }
+        .btn-ans { background: #4dabf7; min-width: 140px; }
+        .btn-level { background: #4dabf7; min-width: 140px; } /* 關卡按鈕獨立 class */
+        
+        .hint-box { font-size: 17px; color: #555; background: #fffde7; padding: 8px 12px; border-radius: 10px; display: inline-block; margin-bottom: 10px; border: 1px dashed #ffd54f; }
+        .rank-table { width: 100%; margin-top: 20px; font-size: 14px; border-collapse: collapse; }
+        .rank-table th, .rank-table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+        @media (max-width: 600px) {
+            header { flex-direction: column; padding: 10px; }
+            nav { margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand-box">
+        <div class="logo-circle"><img src="JESSIEMATH-Q.png" alt="Logo"></div>
+        <span class="brand-text">Jessie Math</span>
+    </div>
+    <nav>
+        <a href="https://jessiemath0703-chu.github.io/website2/" class="nav-btn"><i class="fas fa-home"></i>首頁</a>
+        <a href="https://jessiemath0703-chu.github.io/Game-Lobby/" class="nav-btn"><i class="fas fa-gamepad"></i>遊戲大廳</a>
+        <a href="https://jessiemath0703-chu.github.io/Game-Lobby/#g4-u7" class="nav-btn blue-border"><i class="fas fa-chevron-left"></i>四年級三角形與全等</a>
+    </nav>
+</header>
+
+<div id="main-wrapper">
+    <!-- 登入畫面 -->
+    <div id="screen-login" class="screen active">
+        <h2 style="color:var(--jessie-blue);">三角形冒險挑戰</h2>
+        <input type="text" id="playerName" placeholder="輸入英雄名字..." style="padding:15px; width:85%; border:2px solid #eee; border-radius:12px; margin:25px 0; font-size: 18px;">
+        <button class="btn btn-main" onclick="setPlayerAndGo()">開始冒險</button>
+    </div>
+
+    <!-- 關卡選單 -->
+    <div id="screen-levels" class="screen">
+        <h3>選擇挑戰任務</h3>
+        <button class="btn btn-level" style="width:90%" onclick="startGame(1)">任務 1: 分類偵探</button>
+        <button class="btn btn-level" style="width:90%" onclick="startGame(2)">任務 2: 畫圖建築師</button>
+        <button class="btn btn-level" style="width:90%" onclick="startGame(3)">任務 3: 全等守門員</button>
+        <h4 style="margin-top:25px; color:#666;">🏆 排行榜 (本次挑戰)</h4>
+        <table class="rank-table" id="rank-display">
+            <thead><tr><th>排名</th><th>英雄</th><th>得分</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="screen-game" class="screen">
+        <div id="pause-overlay">
+            <h2 style="color:var(--jessie-blue); margin-bottom:20px;">暫停中</h2>
+            <button class="btn btn-main" onclick="togglePause()"><i class="fas fa-play"></i> 繼續遊戲</button>
+        </div>
+        <div id="feedback-overlay">
+            <i id="feedback-icon" class="fas flash-icon"></i>
+            <div id="feedback-text" class="flash-text"></div>
+        </div>
+        <div class="stats">
+            <span id="timer" style="color:var(--error-red)">
+                <i class="fas fa-clock"></i> 60s
+            </span>
+            <span id="score">
+                <i class="fas fa-star" style="color:var(--primary-yellow)"></i> 0
+            </span>
+            <span id="combo">Combo x0</span>
+        </div>
+        <div id="hint-area"></div>
+        <div id="game-content-area">
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="300" height="200"></canvas>
+            </div>
+            <div id="question-text" style="font-size: 19px; font-weight:bold; margin-bottom:15px; padding:0 10px;"></div>
+            <div id="options-area" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+        </div>
+        <div style="margin-top:20px; border-top: 1px solid #eee; padding-top: 15px;">
+            <button class="btn" style="background:#FFC107;" onclick="togglePause()"><i class="fas fa-pause"></i> 暫停</button>
+            <button class="btn" style="background:#8BC34A;" onclick="restartGame()"><i class="fas fa-redo"></i> 重新</button>
+            <button class="btn" style="background:#607D8B;" onclick="backToMenu()"><i class="fas fa-th-large"></i> 選單</button>
+        </div>
+    </div>
+
+    <!-- 結算畫面 -->
+    <div id="screen-result" class="screen">
+        <h2>挑戰結束！</h2>
+        <div id="star-rating" style="font-size:50px; margin:20px 0;"></div>
+        <p>最終得分：<span id="final-score" style="font-size:36px; color:var(--accent-orange); font-weight:bold;">0</span></p>
+        <button class="btn btn-main" onclick="backToMenu()">回主選單</button>
+    </div>
+</div>
+
+<script>
+    // 遊戲狀態
+    let state = { 
+        playerName: '英雄', 
+        score:0, 
+        timer:60, 
+        combo:0, 
+        level:1, 
+        interval:null, 
+        currentAns:null, 
+        isProcessing: false, 
+        isPaused: false,
+        overlayTimeout: null
+    };
+
+    // 本次挑戰用排行榜（不寫 localStorage）
+    let sessionRank = [];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const praiseWords = ["太棒了！", "正確！", "沒錯！", "好厲害！"];
+
+    function safeClearTimers(){
+        if(state.interval){
+            clearInterval(state.interval);
+            state.interval = null;
+        }
+        if(state.overlayTimeout){
+            clearTimeout(state.overlayTimeout);
+            state.overlayTimeout = null;
+        }
+    }
+
+    function showScreen(id) {
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'screen-levels') updateRankUI();
+    }
+
+    function setPlayerAndGo() {
+        const nameInput = document.getElementById('playerName').value.trim();
+        state.playerName = nameInput || '無名英雄';
+        showScreen('screen-levels');
+    }
+
+    function startGame(lv) {
+        safeClearTimers();
+        state.level = lv; 
+        state.score = 0; 
+        state.timer = 60; 
+        state.combo = 0;
+        state.isProcessing = false; 
+        state.isPaused = false;
+
+        document.getElementById('pause-overlay').style.display = 'none';
+        document.getElementById('feedback-overlay').style.display = 'none';
+        document.getElementById('game-content-area').style.visibility = 'visible';
+
+        document.getElementById('timer').innerHTML = '<i class="fas fa-clock"></i> 60s';
+        document.getElementById('score').innerHTML = '<i class="fas fa-star" style="color:var(--primary-yellow)"></i> 0';
+        document.getElementById('combo').innerText = 'Combo x0';
+
+        showScreen('screen-game');
+        nextQuestion();
+
+        state.interval = setInterval(() => {
+            if(!state.isProcessing && !state.isPaused){
+                state.timer--;
+                if(state.timer < 0) state.timer = 0;
+                document.getElementById('timer').innerHTML = '<i class="fas fa-clock"></i> ' + state.timer + 's';
+                if(state.timer <= 0){
+                    endGame();
+                }
+            }
+        }, 1000);
+    }
+
+    function togglePause() {
+        if(state.isProcessing) return;
+        state.isPaused = !state.isPaused;
+        const overlay = document.getElementById('pause-overlay');
+        const content = document.getElementById('game-content-area');
+        overlay.style.display = state.isPaused ? 'flex' : 'none';
+        content.style.visibility = state.isPaused ? 'hidden' : 'visible';
+    }
+
+    function drawTriangle(pts, color="#2196F3", offset={x:0, y:0}) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x + offset.x, pts[0].y + offset.y);
+        ctx.lineTo(pts[1].x + offset.x, pts[1].y + offset.y);
+        ctx.lineTo(pts[2].x + offset.x, pts[2].y + offset.y);
+        ctx.closePath();
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = 4; 
+        ctx.stroke();
+        ctx.fillStyle = color + "22"; 
+        ctx.fill();
+    }
+
+    function nextQuestion() {
+        state.isProcessing = false;
+        ctx.clearRect(0,0,300,200);
+        const hintArea = document.getElementById('hint-area');
+        const qText = document.getElementById('question-text');
+        const optArea = document.getElementById('options-area');
+
+        hintArea.innerHTML = '';
+        qText.innerText = '';
+        optArea.innerHTML = '';
+        
+        if(state.level === 1) { // 7-1 分類偵探
+            const isAngleMode = Math.random() > 0.5;
+            if(isAngleMode) {
+                const types = ['直角三角形', '鈍角三角形', '銳角三角形'];
+                state.currentAns = types[Math.floor(Math.random()*3)];
+                const hints = { '直角三角形': '有一角是 90 度', '鈍角三角形': '有一角大於 90 度', '銳角三角形': '三角都小於 90 度' };
+                hintArea.innerHTML = '<div class="hint-box">💡 角分類：' + hints[state.currentAns] + '</div>';
+                let pts = [{x:100, y:50}, {x:100, y:150}, {x:200, y:150}];
+                if(state.currentAns === '鈍角三角形') pts = [{x:50, y:150}, {x:250, y:150}, {x:200, y:80}];
+                else if(state.currentAns === '銳角三角形') pts = [{x:150, y:50}, {x:100, y:150}, {x:200, y:150}];
+                drawTriangle(pts, "#E91E63");
+                types.forEach(t => createAnsBtn(t));
+            } else {
+                const types = ['正三角形', '等腰三角形', '不等邊三角形'];
+                state.currentAns = types[Math.floor(Math.random()*3)];
+                const hints = { '正三角形': '三邊都一樣長', '等腰三角形': '有兩邊一樣長', '不等邊三角形': '三邊都不一樣長' };
+                hintArea.innerHTML = '<div class="hint-box">💡 邊分類：' + hints[state.currentAns] + '</div>';
+                let pts = [{x:150, y:50}, {x:80, y:160}, {x:220, y:160}];
+                if(state.currentAns === '不等邊三角形') pts = [{x:80, y:60}, {x:100, y:160}, {x:240, y:150}];
+                drawTriangle(pts, "#4CAF50");
+                types.forEach(t => createAnsBtn(t));
+            }
+        } else if(state.level === 2) { // 7-2 畫圖建築師
+            const qs = [
+                {q: "量角器的「中心點」要對準三角形的哪個位置？", a: "頂點", o: ["頂點", "邊", "高度"]},
+                {q: "想要畫出指定「角度」的三角形，必須用到？", a: "量角器", o: ["量角器", "圓規", "直角尺"]},
+                {q: "任何三角形，一定包含幾個角和幾個邊？", a: "3個", o: ["2個", "3個", "4個"]},
+                {q: "畫三角形時，通常最先畫出哪一部分當基礎？", a: "底邊", o: ["底邊", "高", "頂點"]},
+                {q: "量角器的「0度線」應該跟三角形的哪裡重合？", a: "底邊", o: ["底邊", "頂點", "高"]},
+                {q: "三個角都小於 90 度的三角形叫什麼？", a: "銳角三角形", o: ["銳角三角形", "鈍角三角形", "直角三角形"]},
+                {q: "一個三角形中，最多可以有幾個直角？", a: "1個", o: ["1個", "2個", "3個"]},
+                {q: "兩邊一樣長的三角形，我們稱它為什麼？", a: "等腰三角形", o: ["等腰三角形", "正三角形", "直角三角形"]},
+                {q: "正三角形的三個角都是幾度？", a: "60度", o: ["60度", "90度", "180度"]},
+                {q: "關於正三角形，哪一個說法是正確的？", a: "它也是等腰三角形", o: ["它也是等腰三角形", "它只有兩個角相等", "它有一個鈍角"]},
+                {q: "一個三角形中如果有兩個角相等，它一定是？", a: "等腰三角形", o: ["等腰三角形", "正三角形", "直角三角形"]}
+            ];
+            const pick = qs[Math.floor(Math.random()*qs.length)];
+            state.currentAns = pick.a;
+            qText.innerText = pick.q;
+            hintArea.innerHTML = '<div class="hint-box">🏗️ 建築師任務：挑戰幾何常識！</div>';
+            drawTriangle([{x:100,y:140},{x:200,y:140},{x:150,y:60}], "#FFD700");
+            const options = pick.o.slice().sort(() => Math.random() - 0.5);
+            options.forEach(t => createAnsBtn(t));
+        } else { // 7-3 全等守門員
+            const isC = Math.random() > 0.5;
+            state.currentAns = isC ? "全等" : "不全等";
+            qText.innerText = "這兩個圖形能完全重合(全等)嗎？";
+            const p1 = [{x:40, y:80}, {x:100, y:80}, {x:70, y:30}];
+            drawTriangle(p1, "#9C27B0", {x:0, y:50});
+            const p2 = isC ? p1 : [{x:40, y:80}, {x:120, y:90}, {x:70, y:20}];
+            drawTriangle(p2, "#FF9800", {x:130, y:50});
+            ["全等", "不全等"].forEach(t => createAnsBtn(t));
+        }
+    }
+
+    function createAnsBtn(text) {
+        const optArea = document.getElementById('options-area');
+        const b = document.createElement('button');
+        b.className = 'btn btn-ans'; 
+        b.innerText = text;
+        b.onclick = () => {
+            if(state.isPaused || state.isProcessing) return;
+            state.isProcessing = true;
+            document.querySelectorAll('.btn-ans').forEach(btn => btn.disabled = true);
+
+            const isCorrect = (text === state.currentAns);
+            const overlay = document.getElementById('feedback-overlay');
+            const icon = document.getElementById('feedback-icon');
+            const txt = document.getElementById('feedback-text');
+
+            if(isCorrect) {
+                state.score += 10; 
+                state.timer += 5; 
+                state.combo++;
+                icon.className = "fas fa-check-circle flash-icon";
+                icon.style.color = "var(--success-green)";
+                txt.innerText = praiseWords[Math.floor(Math.random()*praiseWords.length)];
+                txt.style.color = "var(--success-green)";
+                overlay.style.display = 'block';
+
+                updateUI();
+                state.overlayTimeout = setTimeout(() => { 
+                    overlay.style.display = 'none'; 
+                    nextQuestion(); 
+                }, 600);
+            } else {
+                state.timer -= 5; 
+                if(state.timer < 0) state.timer = 0;
+                state.combo = 0;
+                icon.className = "fas fa-times-circle flash-icon";
+                icon.style.color = "var(--error-red)";
+                txt.innerText = '正確答案：' + state.currentAns;
+                txt.style.color = "var(--error-red)";
+                overlay.style.display = 'block';
+
+                updateUI();
+                state.overlayTimeout = setTimeout(() => { 
+                    overlay.style.display = 'none'; 
+                    nextQuestion(); 
+                }, 1500);
+            }
+        };
+        optArea.appendChild(b);
+    }
+
+    function updateUI() {
+        document.getElementById('score').innerHTML = '<i class="fas fa-star" style="color:var(--primary-yellow)"></i> ' + state.score;
+        document.getElementById('combo').innerText = 'Combo x' + state.combo;
+        document.getElementById('timer').innerHTML = '<i class="fas fa-clock"></i> ' + state.timer + 's';
+    }
+
+    function backToMenu() { 
+        safeClearTimers();
+        state.isProcessing = false;
+        state.isPaused = false;
+        document.getElementById('pause-overlay').style.display = 'none';
+        document.getElementById('feedback-overlay').style.display = 'none';
+        showScreen('screen-levels'); 
+    }
+
+    function restartGame() { 
+        startGame(state.level); 
+    }
+
+    function updateRankUI() {
+        const tbody = document.querySelector('#rank-display tbody');
+        let html = '';
+        sessionRank.forEach((r, i) => {
+            if(i < 5){
+                html += `<tr><td>${i+1}</td><td>${r.name}</td><td>${r.score}</td></tr>`;
+            }
+        });
+        tbody.innerHTML = html;
+    }
+
+    function endGame() {
+        safeClearTimers();
+        state.isProcessing = true;
+
+        sessionRank.push({ name: state.playerName, score: state.score });
+        sessionRank.sort((a,b) => b.score - a.score);
+        if (sessionRank.length > 5) sessionRank = sessionRank.slice(0,5);
+
+        document.getElementById('final-score').innerText = state.score;
+        const star = document.getElementById('star-rating');
+        star.innerText = state.score > 200 ? "⭐⭐⭐" : (state.score > 100 ? "⭐⭐" : "⭐");
+        showScreen('screen-result');
+    }
+
+    // 一開始更新一次排行榜（空的）
+    updateRankUI();
+</script>
+</body>
+</html>
